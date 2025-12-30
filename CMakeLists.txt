@@ -13,7 +13,7 @@ add_library(pm_core STATIC
 )
 
 target_include_directories(pm_core PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/pm
 )
 
 # ---- CLI app ----
@@ -24,7 +24,8 @@ add_executable(pm_cli
 target_link_libraries(pm_cli PRIVATE pm_core)
 
 # Keep your original executable name if you want
-set_target_properties(pm_cli PROPERTIES OUTPUT_NAME "PasswordManager")
+set_target_properties(pm_cli PROPERTIES OUTPUT_NAME "pm")
+
 
 include(CTest)
 enable_testing()
