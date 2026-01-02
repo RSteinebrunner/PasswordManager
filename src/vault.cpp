@@ -1,6 +1,3 @@
-#include <filesystem>
-#include <iostream>
-#include <fstream>
 #include "vault.h"
 
 
@@ -8,10 +5,6 @@
         //default constructor will retrieve vault filepath
         vault::vault(){
             retrieveDefaultVaultPath();
-        }
-        //constructor runs when a filepath is passed in and set it manually
-        vault::vault(const std::filesystem::path& newPath){
-            vaultPath = newPath;
         }
 
         std::filesystem::path vault::getConfigDirectory(){
@@ -105,4 +98,77 @@
 
             //return output
             return vaultErr::VaultReadFailed;
+        }
+
+        vaultErr vault::addNewKey(const std::filesystem::path& newName, const std::filesystem::path& newUsername, const std::filesystem::path& newPassword){
+            if(vaultPath == "")
+            {
+                return vaultErr::NoPath;
+            }
+            std::ofstream vaultFile(vaultPath, std::ios::app);
+
+            vaultFile << newName << " " << newUsername <<  " " << newPassword << std::endl;
+            vaultFile.close();
+            return vaultErr::Success;
+
+        }
+
+        vaultErr vault::listNames(std::vector<std::string>& names){
+            std::string line;
+            //open file
+            std::ifstream vaultFile(vaultPath);
+            if(!vaultFile){
+                return vaultErr::VaultReadFailed;
+            }
+            //get first words between the "" only
+            while (std::getline(vaultFile, line))
+            {
+                //if no " skip the line
+                const std::size_t first = line.find('"');
+                if (first == std::string::npos)
+                    continue;
+                //if it can't find a second " skip the line
+                const std::size_t second = line.find('"', first + 1);
+                if (second == std::string::npos || second <= first + 1)
+                    continue;
+                //When both exist add the substring between to the list
+                names.push_back(line.substr(first + 1, second - (first + 1)));
+            }
+
+            vaultFile.close();
+            return vaultErr::Success;
+
+        }
+
+        vaultErr vault::getKey(const std::string& keyName, std::string* keyValues){
+            std::string line;
+            //open file
+            std::ifstream vaultFile(vaultPath);
+            if(!vaultFile){
+                return vaultErr::VaultReadFailed;
+            }
+            //find the location of the key, then assign each part to keyValues
+            //TODO better search for faster return
+            while (std::getline(vaultFile, line)){
+                //if no " skip the line
+                std::size_t first = line.find('"');
+                if (first == std::string::npos)
+                    continue;
+                //if it can't find a second " skip the line
+                std::size_t second = line.find('"', first + 1);
+                if (second == std::string::npos || second <= first + 1)
+                    continue;
+                //When both exist substring is a key, check if its the key we are looking for (i know worst search method, its temp)
+                if(keyName == line.substr(first + 1, second - (first + 1))){
+                    //if it matches start setting it up
+                    for(int i = 0; i < 2; i++){
+                        first = line.find('"', second + 1);
+                        second = line.find('"', first + 1);
+                        keyValues[i] = line.substr(first + 1, second - (first + 1));
+                    }
+                }
+            }
+
+            vaultFile.close();
+            return vaultErr::Success;
         }

@@ -13,6 +13,7 @@ static void PrintUsage() {
         << "  pm init <vault_path>\n"
         << "  pm init <vault_path> -f\n"
         << "  pm defaultPath <vault_path>\n"
+        << "  pm add <Name> <Username> <Password>\n"
         ;
 }
 
@@ -39,6 +40,7 @@ int main (int argc, char** argv)
     bool force = false;
     std::string vaultPath;
     vaultErr result;
+    vault v;
 
     if(cmd == "init"){
         // Max args: pm init -f path | min args: pm init path
@@ -73,7 +75,6 @@ int main (int argc, char** argv)
             }
         }
         // if all pass, init vault
-        vault v(vaultPath);
         result = v.initVault(force);
         if(result == vaultErr::Success){
             cout << "Initialized vault: " << vaultPath << "\n"
@@ -105,9 +106,8 @@ int main (int argc, char** argv)
     }
     else if(cmd == "defaultPath"){
         const std::string newPath = argv[2];
-        vault v;
         result = v.setDefaultFilepath(newPath);
-                if(result == vaultErr::Success){
+        if(result == vaultErr::Success){
             cout << "Vault Default Set: " << newPath << endl;
             return 0;
         }
@@ -116,6 +116,63 @@ int main (int argc, char** argv)
             return 2;
         }
 
+    }
+    else if(cmd == "add"){
+        if(argc != 5){
+            PrintUsage();
+            return 2;
+        }
+        const std::string newName = argv[2];
+        const std::string newUsername = argv[3];
+        const std::string newPassword = argv[4];
+
+        result = v.addNewKey(newName, newUsername, newPassword);
+
+        if(result == vaultErr::Success){
+            cout << newName << " successfully added to the database" << endl;
+            return 0;
+        }
+        else{
+            cerr << "Error"<<endl;
+            return 2;
+        }
+        
+    }
+    else if(cmd == "list"){
+        vector<string> namesList;
+        result = v.listNames(namesList);
+
+        if(result == vaultErr::Success){
+            for(const string& name : namesList){
+                cout << name << endl;
+            }
+            return 0;
+        }
+        else if(result == vaultErr::VaultReadFailed){
+            cerr << "Error reading file" << endl;
+            return 2;
+        }
+        
+        cerr << "Error"<<endl;
+        return 2;
+        
+    }
+    else if(cmd == "get"){
+        string keyName = argv[2];
+        string keyValues[3];
+        result = v.getKey(keyName, keyValues);
+
+        if(result == vaultErr::Success){
+            cout << keyName << "\nUsername: " << keyValues[0] << "\nPassword: " << keyValues[1] << endl;
+            return 0;
+        }
+        else if(result == vaultErr::VaultReadFailed){
+            cerr << "Error reading file" << endl;
+            return 2;
+        }
+        
+        cerr << "Error"<<endl;
+        return 2;
     }
 
 
